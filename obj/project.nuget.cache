@@ -1,8 +1,16 @@
 {
   "version": 2,
-  "dgSpecHash": "LfRWI8Ol5RQcK+AgQr8E0YafVQLfPhVSG5H0wVuYqmx+tqS5BWp/r2kKFF5HlIpNnuotBJnP7fhTzwPLHRmVKg==",
+  "dgSpecHash": "8mjOlH+wNnt2CZuuc3LuZTUUQ2R+XuwTGl9vb0b73ySuqExI4aGys6s7obUEzNrsVEpvE7I56A9J1oEKdQhe0w==",
   "success": true,
   "projectFilePath": "/Users/olive1/Library/CloudStorage/OneDrive-Personal/Prague/Year 1/Semester 2/Programming 2/Semester Project/Game-of-Life/Game-of-Life.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "/Users/olive1/.nuget/packages/atksharp/3.24.24.95/atksharp.3.24.24.95.nupkg.sha512",
+    "/Users/olive1/.nuget/packages/cairosharp/3.24.24.95/cairosharp.3.24.24.95.nupkg.sha512",
+    "/Users/olive1/.nuget/packages/gdksharp/3.24.24.95/gdksharp.3.24.24.95.nupkg.sha512",
+    "/Users/olive1/.nuget/packages/giosharp/3.24.24.95/giosharp.3.24.24.95.nupkg.sha512",
+    "/Users/olive1/.nuget/packages/glibsharp/3.24.24.95/glibsharp.3.24.24.95.nupkg.sha512",
+    "/Users/olive1/.nuget/packages/gtksharp/3.24.24.95/gtksharp.3.24.24.95.nupkg.sha512",
+    "/Users/olive1/.nuget/packages/pangosharp/3.24.24.95/pangosharp.3.24.24.95.nupkg.sha512"
+  ],
   "logs": []
 }
