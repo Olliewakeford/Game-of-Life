@@ -1,8 +1,10 @@
 using Gdk;
 using Gtk;
 
+
 class MyWindow : Gtk.Window {
     public MyWindow() : base("Game of Life") {
+
     }
 
     protected override bool OnDeleteEvent(Event e) {
@@ -12,7 +14,7 @@ class MyWindow : Gtk.Window {
 }
 
 class Hello {
-    static void Main() {
+    static void Main1() {
         Application.Init();
         MyWindow w = new MyWindow();
         w.ShowAll();
