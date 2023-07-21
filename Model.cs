@@ -77,4 +77,42 @@ class GameOfLife {
         return liveNeighboursCount;
     }
 
+    //set the grid to the next generation based on the rules of the game
+    public void nextGen(){
+        int[,] newGrid = Grid.clearGrid(height, width);
+        for(int row = 0; row < height; row++){
+            for(int col = 0; col < width; col++){
+                int neighbours = countLiveNeighbours(row, col);
+                if (grid[row,col] == 1){
+                    if (neighbours < 2 || neighbours > 3)
+                        newGrid[row,col] = 0;
+                    else
+                        newGrid[row,col] = 1;
+                }
+                else{
+                    if (neighbours == 3)
+                        newGrid[row,col] = 1;
+                    else
+                        newGrid[row,col] = 0;
+                }
+            }
+        }
+        grid = newGrid;
+    }
+
+    public void eternalLife(){
+       while (true){
+            nextGen();
+            WriteLine(this);
+        }
+    }
+
+    public void mortalLife(int generations){
+        for (int i = 0; i < generations; i++){
+            nextGen();
+            WriteLine(this);
+        }
+    }
+
+
 }
