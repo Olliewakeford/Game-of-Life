@@ -50,4 +50,31 @@ class GameOfLife {
         this.width = width;
         this.grid = grid;
     }
+
+    //return the number of live neighbours of a given cell
+    public int countLiveNeighbours(int row, int column){
+        int liveNeighboursCount = 0;
+
+        // Offsets for the 8 potential neighbouring cells.
+        int[] neighbourRowOffsets = {-1, -1, -1, 0, 0, 1, 1, 1};
+        int[] neighbourColumnOffsets = {-1, 0, 1, -1, 1, -1, 0, 1};
+
+        for (int i = 0; i < neighbourRowOffsets.Length; i++){
+            // Calculate the row and column indices of the neighbouring cell
+            int neighbourRow = row + neighbourRowOffsets[i]; //-1 if out of bounds
+            int neighbourColumn = column + neighbourColumnOffsets[i]; //-1 if out of bounds
+
+            // Check if the calculated neighbour cell is within the grid boundaries.
+            if (neighbourRow >= 0 && neighbourRow < height){
+                if (neighbourColumn >= 0 && neighbourColumn < width) {
+                    // If the neighbour cell is alive (has the value 1), increment the count.
+                    if (grid[neighbourRow, neighbourColumn] == 1)
+                        liveNeighboursCount++;
+                }
+            }
+        }
+
+        return liveNeighboursCount;
+    }
+
 }
