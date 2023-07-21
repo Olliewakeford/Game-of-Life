@@ -29,3 +29,25 @@ static class Grid {
         return grid;
     }
 }
+
+class GameOfLife {
+    private int height;
+    private int width;
+
+    private int[,] grid;
+
+    //initialise a grid with random starting state
+    public GameOfLife(int height, int width){
+        this.height = height;
+        this.width = width;
+        this.grid = Grid.randomGrid(height, width);
+    }
+
+    //initialise a grid with a given starting state
+    public GameOfLife(int height, int width, int[,] grid){
+        //initialise a board based on input
+        this.height = height;
+        this.width = width;
+        this.grid = grid;
+    }
+}
