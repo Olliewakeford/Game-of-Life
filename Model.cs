@@ -51,6 +51,12 @@ class GameOfLife {
         this.grid = grid;
     }
 
+    public int[,] gridProperty {
+        get => grid;
+        set => grid = value;
+    }
+
+
     //return the number of live neighbours of a given cell
     public int countLiveNeighbours(int row, int column){
         int liveNeighboursCount = 0;
@@ -114,5 +120,24 @@ class GameOfLife {
         }
     }
 
-
+    public override string ToString(){
+        string output = "";
+        for (int i = 0; i < height; i++){
+            for (int j = 0; j < width; j++){
+                if (grid[i,j] == 0)
+                    output += " ";
+                else
+                    output += "#";
+            }
+            output += "\n";
+        }
+        return output;
+    } 
 }
+
+// class Program {
+//     static void Main1(){
+//         GameOfLife game = new GameOfLife(10, 10);
+//         game.mortalLife(10);
+//     }
+// } 
