@@ -46,7 +46,7 @@ class GameView : DrawingArea {
 }
 
 class MyWindow : Gtk.Window {
-    GameOfLife game = new GameOfLife(height, width);
+    GameOfLife game = new GameOfLife(height, width, LoadGridState("gospers.txt"));
     public const int height = 50;
     public const int width = 75;
     public const int cellSize = 5;
@@ -62,6 +62,20 @@ class MyWindow : Gtk.Window {
         game.nextGen();
         QueueDraw();
         return true;
+    }
+
+    public static int[,] LoadGridState(string filename){
+        int[,] grid = new int[height, width];
+        string[] lines = System.IO.File.ReadAllLines(filename);
+        for (int i = 0; i < lines.Length; i++){
+            for (int j = 0; j < lines[i].Length; j++){
+                if (lines[i][j] == '1')
+                    grid[i,j] = 1;
+                else
+                    grid[i,j] = 0;
+            }
+        }
+        return grid;
     }
 
     public int Width => width;
