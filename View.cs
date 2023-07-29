@@ -9,6 +9,9 @@ class GameView : DrawingArea {
     Color black = new Color(0, 0, 0);
     GameOfLife game;
     bool running = false;
+    
+    // Margin around the grid
+    public const int margin = 10;
 
     public GameView(GameOfLife game) {
         this.game = game;
@@ -21,7 +24,7 @@ class GameView : DrawingArea {
     }
 
     void drawGrid(Context c, int[,] currGrid){
-        double x = 0, y = 0;
+        double x = margin, y = margin;
 
         for (int i = 0; i < height; i++){
             for (int j = 0; j < width; j++){
@@ -30,13 +33,8 @@ class GameView : DrawingArea {
                 x +=  cellSize; // increase x by cell size
             }
             y += cellSize; // increase y by cell size
-            x = 0; // reset x after each row
+            x = margin; // reset x after each row
         }
-    }
-
-    void nextIteration() {
-        game.nextGen();
-        QueueDraw();
     }
 
     protected override bool OnDrawn (Context c){ 
@@ -54,9 +52,10 @@ class MyWindow : Gtk.Window {
     public const int cellSize = 5;
 
     public MyWindow() : base("Game of Life") {
-        Resize(width * cellSize, height * cellSize);
+        
+        Resize((width * cellSize) + 2 * GameView.margin, (height * cellSize) + 2 * GameView.margin);
         Add(new GameView(game));
-        Timeout.Add(500, onTimeout); 
+        Timeout.Add(50, onTimeout); 
     }
 
     bool onTimeout() {
