@@ -3,6 +3,7 @@ using Gtk;
 using Cairo;
 using Color = Cairo.Color;
 using static MyWindow;
+using Timeout = GLib.Timeout;
 
 class GameView : DrawingArea {
     Color black = new Color(0, 0, 0);
@@ -42,20 +43,26 @@ class GameView : DrawingArea {
         c.SetSourceColor(black);
         int[,] currGrid = game.gridProperty;
         drawGrid(c, currGrid);
-        nextIteration();
         return true;
     }
 }
 
 class MyWindow : Gtk.Window {
+    GameOfLife game = new GameOfLife(height, width);
     public const int height = 50;
     public const int width = 75;
     public const int cellSize = 5;
 
     public MyWindow() : base("Game of Life") {
         Resize(width * cellSize, height * cellSize);
-        GameOfLife game = new GameOfLife(height, width);
         Add(new GameView(game));
+        Timeout.Add(500, onTimeout); 
+    }
+
+    bool onTimeout() {
+        game.nextGen();
+        QueueDraw();
+        return true;
     }
 
     public int Width => width;
