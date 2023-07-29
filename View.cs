@@ -2,53 +2,60 @@ using Gdk;
 using Gtk;
 using Cairo;
 using Color = Cairo.Color;
+using static MyWindow;
 
 class GameView : DrawingArea {
     Color black = new Color(0, 0, 0);
     GameOfLife game;
-    int height;
-    int width;
+    bool running = false;
 
-    public GameView(GameOfLife game, int height, int width) {
+    public GameView(GameOfLife game) {
         this.game = game;
-       this.height = height;
-        this.width = width;
     }
 
     // draw a rectangle at (x,y) with width and height of 5
     protected void drawDot(Context c, double x, double y) { 
-        c.LineWidth = 5;
-        c.Rectangle(x, y, 5, 5);
+        c.Rectangle(x, y, cellSize, cellSize);
         c.Fill();
     }
 
-
-    protected override bool OnDrawn (Context c){ 
-        c.SetSourceColor(black);
-        int[,] currGrid = game.gridProperty;
+    void drawGrid(Context c, int[,] currGrid){
         double x = 0, y = 0;
 
         for (int i = 0; i < height; i++){
             for (int j = 0; j < width; j++){
                 if (currGrid[i,j] == 1)
                     drawDot(c, x, y);
-                x += 5; // increase x by cell size
+                x +=  cellSize; // increase x by cell size
             }
-            y += 5; // increase y by cell size
+            y += cellSize; // increase y by cell size
             x = 0; // reset x after each row
         }
+    }
+
+    void nextIteration() {
+        game.nextGen();
+        QueueDraw();
+    }
+
+    protected override bool OnDrawn (Context c){ 
+        c.SetSourceColor(black);
+        int[,] currGrid = game.gridProperty;
+        drawGrid(c, currGrid);
+        nextIteration();
         return true;
     }
 }
 
 class MyWindow : Gtk.Window {
-    int height = 50;
-    int width = 75;
+    public const int height = 50;
+    public const int width = 75;
+    public const int cellSize = 5;
 
     public MyWindow() : base("Game of Life") {
-        Resize(800, 600);
+        Resize(width * cellSize, height * cellSize);
         GameOfLife game = new GameOfLife(height, width);
-        Add(new GameView(game, height, width));
+        Add(new GameView(game));
     }
 
     public int Width => width;
