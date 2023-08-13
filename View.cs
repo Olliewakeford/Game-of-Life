@@ -4,25 +4,25 @@ using Cairo;
 using Color = Cairo.Color;
 using static MyWindow;
 using Timeout = GLib.Timeout;
+using System.IO;
 
 class GameView : DrawingArea {
     Color black = new Color(0, 0, 0);
     GameOfLife game;
-    bool running = false;
-    
-    // Margin around the grid
-    public const int margin = 10;
+    bool running = true; 
+    public const int margin = 10; // Margin around the grid
 
-    public GameView(GameOfLife game) {
+    public GameView(GameOfLife game){
         this.game = game;
     }
 
-    // draw a rectangle at (x,y) with width and height of 5
-    protected void drawDot(Context c, double x, double y) { 
+    // draw a square at (x,y) with width and height
+    protected void drawDot(Context c, double x, double y){ 
         c.Rectangle(x, y, cellSize, cellSize);
         c.Fill();
     }
 
+    //draw the entire grid, representing alive cells as a black square
     void drawGrid(Context c, int[,] currGrid){
         double x = margin, y = margin;
 
@@ -40,31 +40,80 @@ class GameView : DrawingArea {
     protected override bool OnDrawn (Context c){ 
         c.SetSourceColor(black);
         int[,] currGrid = game.gridProperty;
-        drawGrid(c, currGrid);
+        if (running)
+            drawGrid(c, currGrid);
         return true;
     }
+
+    
 }
 
 class MyWindow : Gtk.Window {
-    GameOfLife game = new GameOfLife(height, width, LoadGridState("gospers.txt"));
+    GameOfLife game;
     public const int height = 50;
     public const int width = 75;
     public const int cellSize = 5;
+    bool running = true;
+    VBox vbox;
+    GameView gameView;
+    MenuBar menuBar;
+    MenuItem fileMenuItem;
+    Menu fileMenu;
 
-    public MyWindow() : base("Game of Life") {
-        
+    public MyWindow() : base("Game of Life"){
+        initializeUI();
+        loadStartingStatesMenu();
+    }
+
+    private void initializeUI(){
         Resize((width * cellSize) + 2 * GameView.margin, (height * cellSize) + 2 * GameView.margin);
-        Add(new GameView(game));
+        vbox = new VBox(false, 2); // Create a vertical box to hold the menu bar
+
+        // Create the menu bar and menu items
+        menuBar = new MenuBar();
+        fileMenuItem = new MenuItem("Starting States");
+        fileMenu = new Menu();
+        
+        vbox.PackStart(menuBar, false, false, 0); // Add menu bar to vertical box
+        Add(vbox); // Add vertical box to the window
+    }
+
+    private void loadStartingStatesMenu(){
+        // Get a list of files from the "StartingStates" directory
+        DirectoryInfo dInfo = new DirectoryInfo("StartingStates");
+        FileInfo[] files = dInfo.GetFiles("*");
+
+        // Iterate through each file in the directory and create a menu item for it
+        foreach (FileInfo file in files) {
+            MenuItem menuItem = new MenuItem(file.Name);
+
+            // Attach an event handler for when the menu item is clicked
+            menuItem.Activated += (sender, e) => {
+                loadGameViewFromFile(file.Name);
+                vbox.ShowAll();
+            };
+
+            fileMenu.Append(menuItem); // Add the menu item to the menu
+        }
+
+        fileMenuItem.Submenu = fileMenu; // Set the submenu of the menu item to the fileMenu
+        menuBar.Append(fileMenuItem); // Add menu item to the menu bar
+    }
+
+    //Given a filename, load a game view with this starting state
+    private void loadGameViewFromFile(string filename){
+        if (gameView != null) 
+            vbox.Remove(gameView); // Remove the previous game view
+
+        game = new GameOfLife(height, width, loadGridState($"StartingStates/{filename}"));
+        gameView = new GameView(game);
+
+        vbox.PackStart(gameView, true, true, 0);
         Timeout.Add(50, onTimeout); 
     }
 
-    bool onTimeout() {
-        game.nextGen();
-        QueueDraw();
-        return true;
-    }
-
-    public static int[,] LoadGridState(string filename){
+    //load the starting grid state from a file
+    public static int[,] loadGridState(string filename){
         int[,] grid = new int[height, width];
         string[] lines = System.IO.File.ReadAllLines(filename);
         for (int i = 0; i < lines.Length; i++){
@@ -78,20 +127,26 @@ class MyWindow : Gtk.Window {
         return grid;
     }
 
-    public int Width => width;
-    public int Height => height;
+    //called to update the grid each generation
+    bool onTimeout(){
+        if (running)
+            game.nextGen();
+        QueueDraw();
+        return true;
+    }
 
-    protected override bool OnDeleteEvent(Event e) {
+    //close the window
+    protected override bool OnDeleteEvent(Event e){
         Application.Quit();
         return true;
     }
 }
 
 class Top {
-    static void Main() {
+    static void Main(){
         Application.Init();
         MyWindow w = new MyWindow();
         w.ShowAll();
         Application.Run();
     }
-}
+} 
