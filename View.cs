@@ -135,6 +135,13 @@ class MyWindow : Gtk.Window {
         return true;
     }
 
+    //allow the user to pause the game using the space bar
+    protected override bool OnKeyPressEvent(EventKey evnt){
+        if (evnt.Key == Gdk.Key.space)
+            running = !running;
+        return true;
+    }
+
     //close the window
     protected override bool OnDeleteEvent(Event e){
         Application.Quit();
