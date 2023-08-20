@@ -50,38 +50,46 @@ class GameView : DrawingArea {
 
 class MyWindow : Gtk.Window {
     GameOfLife game;
+    GameView gameView;
+
+    //dimensions of the grid
     public const int height = 50;
     public const int width = 75;
-    public const int cellSize = 5;
+    public const int cellSize = 10;
+
+    uint delay = 200; //delay between generations in milliseconds
     bool running = true;
-    VBox vbox;
-    GameView gameView;
+
+    // UI elements
+    Box topVBox;
     MenuBar menuBar;
     MenuItem fileMenuItem;
     Menu fileMenu;
 
-    public MyWindow() : base("Game of Life"){
+    public MyWindow() : base("Game of Life") {
         initializeUI();
         loadStartingStatesMenu();
+        loadSpeedMenu();
     }
 
-    private void initializeUI(){
-        Resize((width * cellSize) + 2 * GameView.margin, (height * cellSize) + 2 * GameView.margin);
-        vbox = new VBox(false, 2); // Create a vertical box to hold the menu bar
+    void initializeUI(){
+        Resize((width * cellSize) + 2 * GameView.margin, (height * cellSize) + 2 * GameView.margin + 50);
+        topVBox = new Box(Orientation.Vertical, 2); // Create a vertical box 
 
         // Create the menu bar and menu items
         menuBar = new MenuBar();
         fileMenuItem = new MenuItem("Starting States");
         fileMenu = new Menu();
         
-        vbox.PackStart(menuBar, false, false, 0); // Add menu bar to vertical box
-        Add(vbox); // Add vertical box to the window
+        topVBox.PackStart(menuBar, false, false, 0); // Add menu bar
+        Add(topVBox); // Add vertical box to the window
     }
 
-    private void loadStartingStatesMenu(){
+
+    void loadStartingStatesMenu(){
         // Get a list of files from the "StartingStates" directory
-        DirectoryInfo dInfo = new DirectoryInfo("StartingStates");
-        FileInfo[] files = dInfo.GetFiles("*");
+        DirectoryInfo dInfo = new DirectoryInfo("StartingStates");  
+        FileInfo[] files = dInfo.GetFiles("*"); //all files in the directory
 
         // Iterate through each file in the directory and create a menu item for it
         foreach (FileInfo file in files) {
@@ -90,7 +98,7 @@ class MyWindow : Gtk.Window {
             // Attach an event handler for when the menu item is clicked
             menuItem.Activated += (sender, e) => {
                 loadGameViewFromFile(file.Name);
-                vbox.ShowAll();
+                topVBox.ShowAll();
             };
 
             fileMenu.Append(menuItem); // Add the menu item to the menu
@@ -101,21 +109,41 @@ class MyWindow : Gtk.Window {
     }
 
     //Given a filename, load a game view with this starting state
-    private void loadGameViewFromFile(string filename){
+    void loadGameViewFromFile(string filename){
         if (gameView != null) 
-            vbox.Remove(gameView); // Remove the previous game view
+            topVBox.Remove(gameView); // Remove the previous game view
 
-        game = new GameOfLife(height, width, loadGridState($"StartingStates/{filename}"));
+        if (filename == "random") //if the user wants a random starting state
+            game = new GameOfLife(height, width);
+        else //otherwise load the starting state from the files in the StartingStates directory
+            game = new GameOfLife(height, width, loadGridState($"StartingStates/{filename}"));
+
         gameView = new GameView(game);
-
-        vbox.PackStart(gameView, true, true, 0);
-        Timeout.Add(50, onTimeout); 
+        topVBox.PackStart(gameView, true, true, 0);
+        GLib.Source.Remove(timeoutId); // Remove the old timeout
+        timeoutId = Timeout.Add((uint)delay, onTimeout); // Store the new timeout's ID
     }
+
+    private void loadSpeedMenu() {
+        Box hbox = new Box(Orientation.Horizontal, 0);
+        RadioButton s = new RadioButton("slow");
+        RadioButton m = new RadioButton(s, "medium");
+        RadioButton f = new RadioButton(s, "fast");
+        s.Clicked += onSlowClicked;
+        m.Clicked += onMediumClicked;
+        f.Clicked += onFastClicked;
+        hbox.Add(s);
+        hbox.Add(m);
+        hbox.Add(f);
+        hbox.Margin = 5;
+        topVBox.Add(hbox);
+        Add(topVBox);
+}
 
     //load the starting grid state from a file
     public static int[,] loadGridState(string filename){
         int[,] grid = new int[height, width];
-        string[] lines = System.IO.File.ReadAllLines(filename);
+        string[] lines = File.ReadAllLines(filename);
         for (int i = 0; i < lines.Length; i++){
             for (int j = 0; j < lines[i].Length; j++){
                 if (lines[i][j] == '1')
@@ -127,6 +155,25 @@ class MyWindow : Gtk.Window {
         return grid;
     }
 
+    void onSlowClicked(object? sender, EventArgs e) {
+        delay = 200;
+        GLib.Source.Remove(timeoutId); // Remove the old timeout
+        timeoutId = Timeout.Add((uint)delay, onTimeout); // Store the new timeout's ID
+    }
+
+    void onMediumClicked(object? sender, EventArgs e) {
+        delay = 75;
+        GLib.Source.Remove(timeoutId); // Remove the old timeout
+        timeoutId = Timeout.Add((uint)delay, onTimeout); // Store the new timeout's ID
+    }
+
+    void onFastClicked(object? sender, EventArgs e) {
+        delay = 25;
+        GLib.Source.Remove(timeoutId); // Remove the old timeout
+        timeoutId = Timeout.Add((uint)delay, onTimeout); // Store the new timeout's ID
+}
+
+    
     //called to update the grid each generation
     bool onTimeout(){
         if (running)
@@ -134,6 +181,7 @@ class MyWindow : Gtk.Window {
         QueueDraw();
         return true;
     }
+
 
     //allow the user to pause the game using the space bar
     protected override bool OnKeyPressEvent(EventKey evnt){
@@ -149,7 +197,7 @@ class MyWindow : Gtk.Window {
     }
 }
 
-class Top {
+class Program {
     static void Main(){
         Application.Init();
         MyWindow w = new MyWindow();
