@@ -4,7 +4,6 @@ using Cairo;
 using Color = Cairo.Color;
 using static MyWindow;
 using Timeout = GLib.Timeout;
-using System.IO;
 
 class GameView : DrawingArea {
     Color black = new Color(0, 0, 0);
@@ -59,6 +58,8 @@ class MyWindow : Gtk.Window {
 
     uint delay = 200; //delay between generations in milliseconds
     bool running = true;
+    bool displayDefault = true; //whether to display the default starting state (gospers glider gun)
+    uint timeoutId; //used to keep track of the timeout source ID
 
     // UI elements
     Box topVBox;
@@ -68,8 +69,9 @@ class MyWindow : Gtk.Window {
 
     public MyWindow() : base("Game of Life") {
         initializeUI();
-        loadStartingStatesMenu();
         loadSpeedMenu();
+        loadLifeSpanOptions();
+        loadStartingStatesMenu();
     }
 
     void initializeUI(){
@@ -97,12 +99,16 @@ class MyWindow : Gtk.Window {
 
             // Attach an event handler for when the menu item is clicked
             menuItem.Activated += (sender, e) => {
+                displayDefault = false;
                 loadGameViewFromFile(file.Name);
                 topVBox.ShowAll();
             };
 
+
             fileMenu.Append(menuItem); // Add the menu item to the menu
         }
+        if (displayDefault) //if the user hasn't selected a starting state yet
+            loadGameViewFromFile("gospers"); //load gospers gliding gun as default starting state
 
         fileMenuItem.Submenu = fileMenu; // Set the submenu of the menu item to the fileMenu
         menuBar.Append(fileMenuItem); // Add menu item to the menu bar
@@ -132,6 +138,7 @@ class MyWindow : Gtk.Window {
         s.Clicked += onSlowClicked;
         m.Clicked += onMediumClicked;
         f.Clicked += onFastClicked;
+        hbox.Add(new Label("Speed: ")); 
         hbox.Add(s);
         hbox.Add(m);
         hbox.Add(f);
