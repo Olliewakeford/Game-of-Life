@@ -22,7 +22,7 @@ static class Grid {
 
         for(int i = 0; i < height; i++){
             for(int j = 0; j < width; j++){
-                grid[i, j] = rand.Next(0,2); //look into adjusting probability
+                grid[i, j] = rand.Next(0,2); //50% probablity of a cell being alive
             }
         }
         
@@ -33,7 +33,6 @@ static class Grid {
 class GameOfLife {
     private int height;
     private int width;
-
     private int[,] grid;
 
     //initialise a grid with random starting state
@@ -51,11 +50,10 @@ class GameOfLife {
         this.grid = grid;
     }
 
-    public int[,] gridProperty {
+    public int[,] gridProperty{
         get => grid;
         set => grid = value;
     }
-
 
     //return the number of live neighbours of a given cell
     public int countLiveNeighbours(int row, int column){
@@ -89,17 +87,17 @@ class GameOfLife {
         for(int row = 0; row < height; row++){
             for(int col = 0; col < width; col++){
                 int neighbours = countLiveNeighbours(row, col);
-                if (grid[row,col] == 1){
+                if (grid[row,col] == 1){ //if cell is alive
                     if (neighbours < 2 || neighbours > 3)
-                        newGrid[row,col] = 0;
+                        newGrid[row,col] = 0; //cell dies
                     else
-                        newGrid[row,col] = 1;
+                        newGrid[row,col] = 1; //cell lives on
                 }
-                else{
+                else{ //if cell is dead
                     if (neighbours == 3)
-                        newGrid[row,col] = 1;
+                        newGrid[row,col] = 1; //cell lives
                     else
-                        newGrid[row,col] = 0;
+                        newGrid[row,col] = 0; //cell stays dead
                 }
             }
         }
@@ -120,6 +118,7 @@ class GameOfLife {
         }
     }
 
+    //return a string representation of the grid
     public override string ToString(){
         string output = "";
         for (int i = 0; i < height; i++){
@@ -127,17 +126,10 @@ class GameOfLife {
                 if (grid[i,j] == 0)
                     output += " ";
                 else
-                    output += "#";
+                    output += "#"; //an alive cell
             }
             output += "\n";
         }
         return output;
     } 
 }
-
-// class Program {
-//     static void Main1(){
-//         GameOfLife game = new GameOfLife(10, 10);
-//         game.mortalLife(10);
-//     }
-// } 

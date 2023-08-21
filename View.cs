@@ -5,6 +5,7 @@ using Color = Cairo.Color;
 using static MyWindow;
 using Timeout = GLib.Timeout;
 
+//the view of the game, responsible for drawing the grid
 class GameView : DrawingArea {
     Color black = new Color(0, 0, 0);
     GameOfLife game;
@@ -15,7 +16,7 @@ class GameView : DrawingArea {
         this.game = game;
     }
 
-    // draw a square at (x,y) with width and height
+    // draw a square at (x,y) with the cellSize width and height
     protected void drawDot(Context c, double x, double y){ 
         c.Rectangle(x, y, cellSize, cellSize);
         c.Fill();
@@ -43,10 +44,9 @@ class GameView : DrawingArea {
             drawGrid(c, currGrid);
         return true;
     }
-
-    
 }
 
+//class to handle the whole window representing the game and its extras
 class MyWindow : Gtk.Window {
     GameOfLife game;
     GameView gameView;
@@ -56,11 +56,16 @@ class MyWindow : Gtk.Window {
     public const int width = 75;
     public const int cellSize = 10;
 
-    uint delay = 200; //delay between generations in milliseconds
-    bool running = true;
+    //game settings
+    int delay = 200; //delay between generations in milliseconds
+    bool unPaused = true; //true if the game is unpaused
     bool displayDefault = true; //whether to display the default starting state (gospers glider gun)
-    uint timeoutId; //used to keep track of the timeout source ID
+    uint timeoutTracker; //used to keep track of the timeout source ID
     int lifeSpan = -1; //number of generations to run the game for. -1 means run forever
+    int slowSpeed = 200; //delay between generations when running slowly
+    int mediumSpeed = 75; //delay between generations when running at medium speed
+    int fastSpeed = 25; //delay between generations when running fast
+    int spinButtonIncrement = 10; //increment for the spin button
 
     // UI elements
     Box vBox;
@@ -77,6 +82,7 @@ class MyWindow : Gtk.Window {
         loadStartingStatesMenu();
     }
 
+    //set up the basics of the window with a menu
     void initializeUI(){
         Resize((width * cellSize) + 2 * GameView.margin, (height * cellSize) + 2 * GameView.margin + 200);
         vBox = new Box(Orientation.Vertical, 2); // Create a vertical box 
@@ -90,7 +96,7 @@ class MyWindow : Gtk.Window {
         Add(vBox); // Add vertical box to the window
     }
 
-
+    //create a menu for the user to select starting states from
     void loadStartingStatesMenu(){
         // Get a list of files from the "StartingStates" directory
         DirectoryInfo dInfo = new DirectoryInfo("StartingStates");  
@@ -128,8 +134,8 @@ class MyWindow : Gtk.Window {
 
         gameView = new GameView(game);
         vBox.PackStart(gameView, true, true, 0);
-        GLib.Source.Remove(timeoutId); // Remove the old timeout
-        timeoutId = Timeout.Add((uint)delay, onTimeout); // Store the new timeout's ID
+        GLib.Source.Remove(timeoutTracker); // Remove the old timeout
+        timeoutTracker = Timeout.Add((uint)delay, onTimeout); // Store the new timeout's ID
     }
 
     //load the starting grid state from a file
@@ -146,6 +152,7 @@ class MyWindow : Gtk.Window {
         }
         return grid;
     }
+
     //radio buttons to select speed of the Game of Life
     private void loadSpeedMenu(){
         Box hbox = new Box(Orientation.Horizontal, 0);
@@ -166,26 +173,26 @@ class MyWindow : Gtk.Window {
 
     //event handlers for the speed radio buttons
     void onSlowClicked(object? sender, EventArgs e) {
-        delay = 200;
-        GLib.Source.Remove(timeoutId); // Remove the old timeout
-        timeoutId = Timeout.Add((uint)delay, onTimeout); // Store the new timeout's ID
+        delay = slowSpeed;
+        GLib.Source.Remove(timeoutTracker); // Remove the old timeout
+        timeoutTracker = Timeout.Add((uint)delay, onTimeout); // Store the new timeout's ID
     }
 
     void onMediumClicked(object? sender, EventArgs e) {
-        delay = 75;
-        GLib.Source.Remove(timeoutId); // Remove the old timeout
-        timeoutId = Timeout.Add((uint)delay, onTimeout); // Store the new timeout's ID
+        delay = mediumSpeed;
+        GLib.Source.Remove(timeoutTracker); // Remove the old timeout
+        timeoutTracker = Timeout.Add((uint)delay, onTimeout); // Store the new timeout's ID
     }
 
     void onFastClicked(object? sender, EventArgs e) {
-        delay = 25;
-        GLib.Source.Remove(timeoutId); // Remove the old timeout
-        timeoutId = Timeout.Add((uint)delay, onTimeout); // Store the new timeout's ID
+        delay = fastSpeed;
+        GLib.Source.Remove(timeoutTracker); // Remove the old timeout
+        timeoutTracker = Timeout.Add((uint)delay, onTimeout); // Store the new timeout's ID
     }
 
     void loadLifeSpanOptions(){
-        Box hbox = new Box(Orientation.Horizontal, 0);
-        lifeSpanSpinner = new SpinButton(-1, 1000, 10); //spin button for selecting the number of generations to play game
+        Box hbox = new Box(Orientation.Horizontal, 0); //box to hold life span options
+        lifeSpanSpinner = new SpinButton(-1, 1000, spinButtonIncrement); //spin button for selecting the number of generations to play game
         lifeSpanSpinner.Value = -1 ; //-1 means run forever and is the default setting
         lifeSpanSpinner.ValueChanged += onLifeSpanChanged;
         hbox.Add(new Label("Life Span: "));
@@ -217,9 +224,9 @@ class MyWindow : Gtk.Window {
         }
     }
 
-    //called to update the grid each generation
+    //called to update the grid every timeout interval
     bool onTimeout(){
-        if (running){ //game is not paused
+        if (unPaused){ //game is not paused
             if (lifeSpan > 0){ //if the user has selected a number of generations to play
                 lifeSpan--;
                 game.nextGen();
@@ -236,7 +243,7 @@ class MyWindow : Gtk.Window {
     //allow the user to pause the game using the space bar
     protected override bool OnKeyPressEvent(EventKey evnt){
         if (evnt.Key == Gdk.Key.space)
-            running = !running;
+            unPaused = !unPaused;
         return true;
     }
 

@@ -5,6 +5,7 @@
     <TargetFramework>net7.0</TargetFramework>
     <RootNamespace>Game_of_Life</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>CS8618</NoWarn>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
