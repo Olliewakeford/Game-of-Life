@@ -60,12 +60,15 @@ class MyWindow : Gtk.Window {
     bool running = true;
     bool displayDefault = true; //whether to display the default starting state (gospers glider gun)
     uint timeoutId; //used to keep track of the timeout source ID
+    int lifeSpan = -1; //number of generations to run the game for. -1 means run forever
 
     // UI elements
-    Box topVBox;
+    Box vBox;
     MenuBar menuBar;
     MenuItem fileMenuItem;
     Menu fileMenu;
+    SpinButton lifeSpanSpinner; //spin button for selecting the number of generations to run the game for
+    CheckButton eternalLife; //checkbox for selecting whether to run the game forever
 
     public MyWindow() : base("Game of Life") {
         initializeUI();
@@ -75,16 +78,16 @@ class MyWindow : Gtk.Window {
     }
 
     void initializeUI(){
-        Resize((width * cellSize) + 2 * GameView.margin, (height * cellSize) + 2 * GameView.margin + 50);
-        topVBox = new Box(Orientation.Vertical, 2); // Create a vertical box 
+        Resize((width * cellSize) + 2 * GameView.margin, (height * cellSize) + 2 * GameView.margin + 200);
+        vBox = new Box(Orientation.Vertical, 2); // Create a vertical box 
 
         // Create the menu bar and menu items
         menuBar = new MenuBar();
         fileMenuItem = new MenuItem("Starting States");
         fileMenu = new Menu();
         
-        topVBox.PackStart(menuBar, false, false, 0); // Add menu bar
-        Add(topVBox); // Add vertical box to the window
+        vBox.PackStart(menuBar, false, false, 0); // Add menu bar
+        Add(vBox); // Add vertical box to the window
     }
 
 
@@ -101,9 +104,8 @@ class MyWindow : Gtk.Window {
             menuItem.Activated += (sender, e) => {
                 displayDefault = false;
                 loadGameViewFromFile(file.Name);
-                topVBox.ShowAll();
+                vBox.ShowAll();
             };
-
 
             fileMenu.Append(menuItem); // Add the menu item to the menu
         }
@@ -117,7 +119,7 @@ class MyWindow : Gtk.Window {
     //Given a filename, load a game view with this starting state
     void loadGameViewFromFile(string filename){
         if (gameView != null) 
-            topVBox.Remove(gameView); // Remove the previous game view
+            vBox.Remove(gameView); // Remove the previous game view
 
         if (filename == "random") //if the user wants a random starting state
             game = new GameOfLife(height, width);
@@ -125,27 +127,10 @@ class MyWindow : Gtk.Window {
             game = new GameOfLife(height, width, loadGridState($"StartingStates/{filename}"));
 
         gameView = new GameView(game);
-        topVBox.PackStart(gameView, true, true, 0);
+        vBox.PackStart(gameView, true, true, 0);
         GLib.Source.Remove(timeoutId); // Remove the old timeout
         timeoutId = Timeout.Add((uint)delay, onTimeout); // Store the new timeout's ID
     }
-
-    private void loadSpeedMenu() {
-        Box hbox = new Box(Orientation.Horizontal, 0);
-        RadioButton s = new RadioButton("slow");
-        RadioButton m = new RadioButton(s, "medium");
-        RadioButton f = new RadioButton(s, "fast");
-        s.Clicked += onSlowClicked;
-        m.Clicked += onMediumClicked;
-        f.Clicked += onFastClicked;
-        hbox.Add(new Label("Speed: ")); 
-        hbox.Add(s);
-        hbox.Add(m);
-        hbox.Add(f);
-        hbox.Margin = 5;
-        topVBox.Add(hbox);
-        Add(topVBox);
-}
 
     //load the starting grid state from a file
     public static int[,] loadGridState(string filename){
@@ -161,7 +146,25 @@ class MyWindow : Gtk.Window {
         }
         return grid;
     }
+    //radio buttons to select speed of the Game of Life
+    private void loadSpeedMenu(){
+        Box hbox = new Box(Orientation.Horizontal, 0);
+        RadioButton s = new RadioButton("slow");
+        RadioButton m = new RadioButton(s, "medium");
+        RadioButton f = new RadioButton(s, "fast");
+        s.Clicked += onSlowClicked;
+        m.Clicked += onMediumClicked;
+        f.Clicked += onFastClicked;
+        hbox.Add(new Label("Speed: ")); 
+        hbox.Add(s);
+        hbox.Add(m);
+        hbox.Add(f);
+        hbox.Margin = 5;
+        vBox.Add(hbox);
+        Add(vBox);
+}
 
+    //event handlers for the speed radio buttons
     void onSlowClicked(object? sender, EventArgs e) {
         delay = 200;
         GLib.Source.Remove(timeoutId); // Remove the old timeout
@@ -178,13 +181,53 @@ class MyWindow : Gtk.Window {
         delay = 25;
         GLib.Source.Remove(timeoutId); // Remove the old timeout
         timeoutId = Timeout.Add((uint)delay, onTimeout); // Store the new timeout's ID
-}
+    }
 
+    void loadLifeSpanOptions(){
+        Box hbox = new Box(Orientation.Horizontal, 0);
+        lifeSpanSpinner = new SpinButton(-1, 1000, 10); //spin button for selecting the number of generations to play game
+        lifeSpanSpinner.Value = -1 ; //-1 means run forever and is the default setting
+        lifeSpanSpinner.ValueChanged += onLifeSpanChanged;
+        hbox.Add(new Label("Life Span: "));
+        hbox.Add(lifeSpanSpinner);
+        eternalLife = new CheckButton("Eternal Life"); //checkbox for selecting whether to run the game forever
+        eternalLife.Active = true;
+        eternalLife.Clicked += onEternalLifeClicked;
+        hbox.Add(eternalLife);
+        hbox.Margin = 5;
+        vBox.Add(hbox);
+        Add(vBox);
+    }
     
+    //event handlers for the life span options
+    void onLifeSpanChanged(object? sender, EventArgs e){
+        if (lifeSpan > 0)
+            eternalLife.Active = false;
+        lifeSpan = (int)lifeSpanSpinner.Value;
+    }
+
+    void onEternalLifeClicked(object? sender, EventArgs e){
+        if (eternalLife.Active){
+            lifeSpan = -1;
+            lifeSpanSpinner.Value = -1;
+        }
+        else {
+            lifeSpan = 0;
+            lifeSpanSpinner.Value = 0;
+        }
+    }
+
     //called to update the grid each generation
     bool onTimeout(){
-        if (running)
-            game.nextGen();
+        if (running){ //game is not paused
+            if (lifeSpan > 0){ //if the user has selected a number of generations to play
+                lifeSpan--;
+                game.nextGen();
+                lifeSpanSpinner.Value = lifeSpan;
+            }
+            else if (lifeSpan == -1) //if the user has selected to play forever
+                game.nextGen();
+        }
         QueueDraw();
         return true;
     }
